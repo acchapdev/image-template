@@ -44,6 +44,26 @@ dnf5 -y config-manager setopt terra.enabled=0
 cp -avf "/ctx/system_files"/. /
 rm -f /etc/greetd/config.toml.rpmnew /etc/greetd/config.toml.rpmsave
 
+### Default user configs in /etc/skel
+# Dux's own `dms setup headless` writes the mango, niri and Hyprland configs
+# (each starts Dux with `dms run`, terminal binds use ghostty) plus the ghostty
+# config, so they always match the Dux version in the image. useradd copies
+# /etc/skel into every new home, so the configs exist before the first login:
+# greetd starts mango straight from mango.desktop and mango reads its config at
+# startup, which a first-login user service would be too late for.
+# dms refuses to run as root, so it runs as nobody in a scratch HOME.
+SKEL_HOME="$(mktemp -d)"
+chown 65534:65534 "${SKEL_HOME}"
+for wm in mango niri hyprland; do
+  setpriv --reuid=65534 --regid=65534 --clear-groups \
+    env -i HOME="${SKEL_HOME}" PATH=/usr/bin:/usr/sbin TERMINAL=ghostty \
+    dms setup headless --compositor "${wm}" --terminal ghostty --skip-existing --no-systemd
+done
+mkdir -p /etc/skel/.config
+cp -a "${SKEL_HOME}/.config/." /etc/skel/.config/
+chown -R root:root /etc/skel/.config
+rm -rf "${SKEL_HOME}"
+
 ### Sanity checks: every package landed and each compositor has a login session
 sed 's/#.*//' /ctx/packages.txt | xargs rpm -q
 for session in mango niri hyprland; do
@@ -52,6 +72,17 @@ done
 rpm -q --qf 'mango (mangowm) %{VERSION}\n' mangowm
 # The login screen must be the Dux greeter running on mango
 grep -q '^command = "/usr/bin/dms-greeter --command mango"' /etc/greetd/config.toml
+# Every compositor's default config starts Dux and opens ghostty, never another terminal
+grep -q '^exec_once=dms run' /etc/skel/.config/mango/config.conf
+grep -q 'spawn-at-startup "dms" "run"' /etc/skel/.config/niri/config.kdl
+grep -q 'exec_cmd("dms run")' /etc/skel/.config/hypr/hyprland.lua
+grep -q 'bind=SUPER,Return,spawn,ghostty' /etc/skel/.config/mango/dms/binds.conf
+grep -q 'Mod+Return .*spawn "ghostty"' /etc/skel/.config/niri/dms/binds.kdl
+grep -q 'SUPER + Return", hl.dsp.exec_cmd("ghostty")' /etc/skel/.config/hypr/dms/binds.lua
+test -f /etc/skel/.config/ghostty/config
+# (`! cmd` is exempt from set -e, so these use explicit exits)
+if grep -qE 'alacritty|kitty' /etc/skel/.config/{mango,niri,hypr}/dms/binds.*; then exit 1; fi
+if grep -rq "${SKEL_HOME}" /etc/skel/.config; then exit 1; fi
 
 ### Services
 systemctl enable podman.socket
