@@ -19,3 +19,4 @@ xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-hyprland
 # Apps
 ghostty xdg-terminal-exec
 tmux
+tailscale
