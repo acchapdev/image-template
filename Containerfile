@@ -4,7 +4,8 @@ COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite:stable
+# ublue-os base-main: Fedora Atomic with no desktop of its own (latest = Fedora 45 as of 2026-11)
+FROM ghcr.io/ublue-os/base-main:latest
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable

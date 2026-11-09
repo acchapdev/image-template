@@ -1,0 +1,21 @@
+# RPMs built into the owlOS image, one or more per line.
+# Blank lines and anything after a '#' are ignored.
+# Adding a default app: put its package name on a line here.
+# Repos come from build.sh (Fedora, duxlabs COPRs, Hyprland COPR, Terra for mango only).
+
+# Dux shell (duxlabs/dms, duxlabs/dux-repo)
+dms quickshell matugen cliphist accountsservice xwayland-satellite
+dux-greeter greetd
+dux-files dux-calendar dux-search dux-gop
+
+# Compositors: mango (default, Terra), niri (Fedora), Hyprland (lionheartp/Hyprland)
+mangowm
+niri
+hyprland hyprland-guiutils
+
+# Portals
+xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-hyprland
+
+# Apps
+ghostty
+tmux
