@@ -103,6 +103,8 @@ if rpm -q firefox; then exit 1; fi
 grep -q '^\[Flatpak Preinstall org.mozilla.firefox\]$' /usr/share/flatpak/preinstall.d/owlos.preinstall
 test -f /usr/share/applications/com.mitchellh.ghostty.desktop
 grep -qx 'com.mitchellh.ghostty.desktop' /usr/share/xdg-terminal-exec/xdg-terminals.list
+# Disk images (qcow2/ISO) need a default root filesystem
+grep -q '^type = "btrfs"' /usr/lib/bootc/install/20-owlos.toml
 
 ### Services
 systemctl enable podman.socket

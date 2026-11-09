@@ -1,0 +1,6 @@
+# Default root filesystem for `bootc install` and bootc-image-builder (qcow2/ISO).
+# base-main doesn't set one (the desktop images like Bluefin do), and without it
+# disk builds fail with "no default root filesystem type specified in container".
+# btrfs is the Fedora Atomic desktop default.
+[install.filesystem.root]
+type = "btrfs"
