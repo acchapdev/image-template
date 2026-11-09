@@ -118,6 +118,10 @@ systemctl set-default graphical.target
 # Default Flatpak apps (Flathub itself is added by ublue's flatpak-add-fedora-repos.service)
 systemctl enable owlos-flatpak-preinstall.service
 
+# Tailscale daemon (Fedora's tailscale package doesn't enable it); it stays idle
+# until a user runs `sudo tailscale up`
+systemctl enable tailscaled.service
+
 ### Clean up before finalizing the image
 rm -rf /run/selinux-policy
 rm -rf /run/dnf
