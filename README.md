@@ -1,4 +1,52 @@
-# image-template
+# owlOS
+
+owlOS is a Fedora Atomic ([bootc](https://github.com/bootc-dev/bootc)) image built on Universal Blue's `base-main`. It ships:
+
+- The [Dux](https://duxlabs.dev) desktop shell and the Dux greeter.
+- A choice of compositor at the login screen: **mango** (the default), **niri** or **Hyprland**.
+- **ghostty** as the default terminal.
+- **Firefox** (from Flathub) as the default browser.
+
+The image is published as `ghcr.io/acchapdev/owlos` and signed with `cosign.pub`.
+
+To switch an existing Fedora Atomic system to it:
+
+```bash
+sudo bootc switch ghcr.io/acchapdev/owlos:latest
+```
+
+## How to add a default app
+
+Default apps come from two plain-text lists. Add one line, open a PR, and the app is on every owlOS system after the next build and update.
+
+| Kind | File | One line per | Installed |
+|---|---|---|---|
+| RPM | [`build_files/packages.txt`](build_files/packages.txt) | package name (several per line is fine) | Built into the image |
+| Flatpak | [`system_files/usr/share/owlos/flatpaks.list`](system_files/usr/share/owlos/flatpaks.list) | Flathub app ID, e.g. `org.gnome.Loupe` | At boot, by `owlos-flatpak-preinstall.service` |
+
+In both files, blank lines and anything after `#` are ignored.
+
+- **RPMs** that aren't in Fedora need their repo enabled (and then disabled again) in `build_files/build.sh`. That's how the duxlabs COPRs, the Hyprland COPR and Terra are handled.
+- **Flatpaks:** at build time the list becomes `/usr/share/flatpak/preinstall.d/owlos.preinstall`, and [`flatpak preinstall`](https://docs.flatpak.org/) applies it at boot:
+  - it installs anything on the list that's missing;
+  - it removes apps that were taken off the list;
+  - it doesn't reinstall an app a user uninstalled.
+
+To make an app the default *handler* (not just installed), set it here:
+
+| Default | File |
+|---|---|
+| Browser and other MIME types | `system_files/etc/xdg/mimeapps.list` |
+| Terminal for `xdg-terminal-exec` | `system_files/usr/share/xdg-terminal-exec/xdg-terminals.list` |
+| Terminal for Dux and other apps that read `$TERMINAL` | `system_files/etc/profile.d/owlos-defaults.sh` and `system_files/usr/lib/environment.d/60-owlos.conf` |
+
+Users can override all of these in their own `~/.config`.
+
+---
+
+# Template documentation
+
+The rest of this README is the upstream `ublue-os/image-template` documentation.
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
 
