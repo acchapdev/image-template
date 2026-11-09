@@ -15,6 +15,8 @@ To switch an existing Fedora Atomic system to it:
 sudo bootc switch ghcr.io/acchapdev/owlos:latest
 ```
 
+To install from scratch, build the installer ISO and follow [docs/TESTING.md](docs/TESTING.md), which also has the test checklist.
+
 ## How to add a default app
 
 Default apps come from two plain-text lists. Add one line, open a PR, and the app is on every owlOS system after the next build and update.
