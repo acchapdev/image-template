@@ -1,0 +1,14 @@
+[Unit]
+Description=Install the owlOS default Flatpak apps (flatpak preinstall)
+Documentation=man:flatpak-preinstall(1)
+Wants=network-online.target
+After=network-online.target flatpak-add-fedora-repos.service
+
+[Service]
+# Type=exec, not oneshot: multi-user.target would otherwise wait for the whole
+# download. If Flathub is unreachable it fails and simply runs again next boot.
+Type=exec
+ExecStart=/usr/bin/flatpak preinstall --system --assumeyes --noninteractive
+
+[Install]
+WantedBy=multi-user.target

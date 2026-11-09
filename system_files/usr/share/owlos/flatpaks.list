@@ -1,0 +1,7 @@
+# Flatpak apps installed from Flathub on every owlOS system, one app ID per line.
+# Blank lines and anything after a '#' are ignored.
+# Adding a default app: put its Flathub ID (e.g. org.gnome.Loupe) on a line here.
+# At build time this becomes /usr/share/flatpak/preinstall.d/owlos.preinstall;
+# owlos-flatpak-preinstall.service installs anything missing at boot and removes
+# apps that were dropped from this list. Apps a user uninstalls stay uninstalled.
+org.mozilla.firefox

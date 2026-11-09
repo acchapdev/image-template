@@ -31,6 +31,10 @@ dnf5 -y config-manager setopt \
 # build_files/packages.txt: one or more names per line, '#' starts a comment
 sed 's/#.*//' /ctx/packages.txt | xargs dnf5 -y install --refresh
 
+# base-main ships the Firefox RPM; owlOS uses Firefox from Flathub instead
+# (flatpaks.list), so drop the RPM to avoid two Firefoxes.
+dnf5 -y remove firefox firefox-langpacks
+
 ### Disable the extra repos again
 for copr in "${COPRS[@]}"; do
   dnf5 -y copr disable "${copr}"
@@ -64,6 +68,17 @@ cp -a "${SKEL_HOME}/.config/." /etc/skel/.config/
 chown -R root:root /etc/skel/.config
 rm -rf "${SKEL_HOME}"
 
+### Default Flatpak apps
+# Turn /usr/share/owlos/flatpaks.list (one Flathub app ID per line) into a
+# flatpak preinstall file; owlos-flatpak-preinstall.service applies it at boot.
+# Flathub apps live on the "stable" branch (preinstall defaults to "master").
+mkdir -p /usr/share/flatpak/preinstall.d
+sed 's/#.*//' /usr/share/owlos/flatpaks.list | xargs -n1 |
+  while read -r app; do
+    printf '[Flatpak Preinstall %s]\nBranch=stable\n\n' "${app}"
+  done >/usr/share/flatpak/preinstall.d/owlos.preinstall
+cat /usr/share/flatpak/preinstall.d/owlos.preinstall
+
 ### Sanity checks: every package landed and each compositor has a login session
 sed 's/#.*//' /ctx/packages.txt | xargs rpm -q
 for session in mango niri hyprland; do
@@ -83,6 +98,11 @@ test -f /etc/skel/.config/ghostty/config
 # (`! cmd` is exempt from set -e, so these use explicit exits)
 if grep -qE 'alacritty|kitty' /etc/skel/.config/{mango,niri,hypr}/dms/binds.*; then exit 1; fi
 if grep -rq "${SKEL_HOME}" /etc/skel/.config; then exit 1; fi
+# Default apps: Firefox comes from Flathub (no RPM), ghostty is the terminal
+if rpm -q firefox; then exit 1; fi
+grep -q '^\[Flatpak Preinstall org.mozilla.firefox\]$' /usr/share/flatpak/preinstall.d/owlos.preinstall
+test -f /usr/share/applications/com.mitchellh.ghostty.desktop
+grep -qx 'com.mitchellh.ghostty.desktop' /usr/share/xdg-terminal-exec/xdg-terminals.list
 
 ### Services
 systemctl enable podman.socket
@@ -92,6 +112,9 @@ systemctl enable podman.socket
 # cache dir come from dux-greeter's sysusers.d/tmpfiles.d entries.
 systemctl enable greetd.service
 systemctl set-default graphical.target
+
+# Default Flatpak apps (Flathub itself is added by ublue's flatpak-add-fedora-repos.service)
+systemctl enable owlos-flatpak-preinstall.service
 
 ### Clean up before finalizing the image
 rm -rf /run/selinux-policy

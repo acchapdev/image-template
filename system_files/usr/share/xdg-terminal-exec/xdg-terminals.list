@@ -1,0 +1,2 @@
+# owlOS default terminal for xdg-terminal-exec (users override in ~/.config/xdg-terminals.list)
+com.mitchellh.ghostty.desktop

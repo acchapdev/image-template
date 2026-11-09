@@ -17,5 +17,5 @@ hyprland hyprland-guiutils
 xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-hyprland
 
 # Apps
-ghostty
+ghostty xdg-terminal-exec
 tmux

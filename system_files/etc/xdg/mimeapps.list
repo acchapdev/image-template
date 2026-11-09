@@ -1,0 +1,9 @@
+# owlOS default browser: Firefox from Flathub (see /usr/share/owlos/flatpaks.list).
+# Users override this in ~/.config/mimeapps.list (e.g. via Dux Settings).
+[Default Applications]
+x-scheme-handler/http=org.mozilla.firefox.desktop
+x-scheme-handler/https=org.mozilla.firefox.desktop
+x-scheme-handler/about=org.mozilla.firefox.desktop
+x-scheme-handler/unknown=org.mozilla.firefox.desktop
+text/html=org.mozilla.firefox.desktop
+application/xhtml+xml=org.mozilla.firefox.desktop
