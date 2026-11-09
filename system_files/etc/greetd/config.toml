@@ -1,0 +1,8 @@
+# owlOS login screen: the Dux greeter (dms-greeter), itself running on mango.
+# The launcher generates the compositor config for the greeter on the fly.
+[terminal]
+vt = 1
+
+[default_session]
+user = "greeter"
+command = "/usr/bin/dms-greeter --command mango"

@@ -2,9 +2,6 @@
 
 set -ouex pipefail
 
-# Copy the contents of system_files/ of the git repo to /
-cp -avf "/ctx/system_files"/. /
-
 ### Repos
 # Every repo enabled here is disabled again below, so none ship turned on.
 COPRS=(
@@ -40,15 +37,30 @@ for copr in "${COPRS[@]}"; do
 done
 dnf5 -y config-manager setopt terra.enabled=0
 
+### Copy the contents of system_files/ of the git repo to /
+# Done after the package install so our files win over package defaults: the
+# greetd RPM ships its own /etc/greetd/config.toml, and dux-greeter's %post
+# rewrites any config that doesn't use dms-greeter (to niri).
+cp -avf "/ctx/system_files"/. /
+rm -f /etc/greetd/config.toml.rpmnew /etc/greetd/config.toml.rpmsave
+
 ### Sanity checks: every package landed and each compositor has a login session
 sed 's/#.*//' /ctx/packages.txt | xargs rpm -q
 for session in mango niri hyprland; do
   test -f "/usr/share/wayland-sessions/${session}.desktop"
 done
 rpm -q --qf 'mango (mangowm) %{VERSION}\n' mangowm
+# The login screen must be the Dux greeter running on mango
+grep -q '^command = "/usr/bin/dms-greeter --command mango"' /etc/greetd/config.toml
 
 ### Services
 systemctl enable podman.socket
+
+# Login screen: greetd + Dux greeter (base-main has no other display manager).
+# This is what `dms-greeter enable` would do; the greeter user, group and
+# cache dir come from dux-greeter's sysusers.d/tmpfiles.d entries.
+systemctl enable greetd.service
+systemctl set-default graphical.target
 
 ### Clean up before finalizing the image
 rm -rf /run/selinux-policy
