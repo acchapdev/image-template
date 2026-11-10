@@ -3,7 +3,8 @@
 # Round 1 showed: Fedora 45 can't depsolve the ISO at all (bootc-image-builder
 # isn't ready for F45), and every job fails with osbuild
 # "mount: ... permission denied" on the ubuntu-26.04 runner.
-# Round 2 (this file) tries fixes for the mount error on a Fedora 44 base.
+# Round 2: ubuntu-26.04 fails even with AppArmor relaxed; ubuntu-24.04 builds qcow2.
+# Round 3 (this file): ISO on F44 and F45, qcow2 on F45, all on ubuntu-24.04.
 # Nothing is pushed. Remove this workflow once disk images build.
 name: Test disk images
 
@@ -15,16 +16,15 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.disk-type }} / ${{ matrix.runner }} / ${{ matrix.fix }}
+    name: ${{ matrix.disk-type }} / base-main:${{ matrix.base }} / ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { disk-type: qcow2, runner: ubuntu-26.04, fix: userns-sysctl }
-          - { disk-type: qcow2, runner: ubuntu-26.04, fix: apparmor-unconfined }
-          - { disk-type: qcow2, runner: ubuntu-24.04, fix: none }
-          - { disk-type: anaconda-iso, runner: ubuntu-26.04, fix: userns-sysctl }
+          - { disk-type: anaconda-iso, runner: ubuntu-24.04, fix: none, base: "44" }
+          - { disk-type: anaconda-iso, runner: ubuntu-24.04, fix: none, base: latest }
+          - { disk-type: qcow2, runner: ubuntu-24.04, fix: none, base: latest }
     permissions:
       contents: read
     steps:
@@ -50,7 +50,7 @@ jobs:
 
       - name: Build owlOS image (rootful, so bootc-image-builder can see it)
         run: |
-          sudo podman build --pull=newer --build-arg BASE_TAG=44 \
+          sudo podman build --pull=newer --build-arg BASE_TAG=${{ matrix.base }} \
             --tag localhost/owlos:test --file Containerfile .
 
       - name: Build ${{ matrix.disk-type }}
