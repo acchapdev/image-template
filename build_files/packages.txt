@@ -16,6 +16,14 @@ hyprland hyprland-guiutils
 # Portals
 xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-hyprland
 
+# Dux system integration (its first-run "System check" asks for these)
+# - power-profiles-daemon: power mode switching, starts on balanced (enabled in build.sh)
+# - cups-pk-helper: add and manage printers without a root prompt
+# - kf6-kimageformats: AVIF/HEIF/JXL/... images for wallpapers and thumbnails
+# - dbus-tools: dbus-update-activation-environment, which niri and the greeter
+#   run to hand the session environment to D-Bus-activated services (portals)
+power-profiles-daemon cups-pk-helper kf6-kimageformats dbus-tools
+
 # Apps
 ghostty xdg-terminal-exec
 tmux
