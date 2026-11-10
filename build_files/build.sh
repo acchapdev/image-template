@@ -105,6 +105,8 @@ test -f /usr/share/applications/com.mitchellh.ghostty.desktop
 grep -qx 'com.mitchellh.ghostty.desktop' /usr/share/xdg-terminal-exec/xdg-terminals.list
 # Disk images (qcow2/ISO) need a default root filesystem
 grep -q '^type = "btrfs"' /usr/lib/bootc/install/20-owlos.toml
+# Dux system integration: niri needs dbus-update-activation-environment
+test -x /usr/bin/dbus-update-activation-environment
 
 ### Services
 systemctl enable podman.socket
@@ -121,6 +123,10 @@ systemctl enable owlos-flatpak-preinstall.service
 # Tailscale daemon (Fedora's tailscale package doesn't enable it); it stays idle
 # until a user runs `sudo tailscale up`
 systemctl enable tailscaled.service
+
+# Power profiles for Dux's power menu. With no saved state the daemon starts on
+# "balanced", the owlOS default; users switch it from Dux or `powerprofilesctl`.
+systemctl enable power-profiles-daemon.service
 
 ### Clean up before finalizing the image
 rm -rf /run/selinux-policy
