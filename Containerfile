@@ -1,3 +1,6 @@
+# base-main tag; override with --build-arg BASE_TAG=44 (e.g. to test Fedora 44)
+ARG BASE_TAG=latest
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
@@ -5,7 +8,7 @@ COPY system_files /system_files
 
 # Base Image
 # ublue-os base-main: Fedora Atomic with no desktop of its own (latest = Fedora 45 as of 2026-11)
-FROM ghcr.io/ublue-os/base-main:latest
+FROM ghcr.io/ublue-os/base-main:${BASE_TAG}
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable

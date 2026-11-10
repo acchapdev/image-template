@@ -1,0 +1,53 @@
+---
+# TEMPORARY (branch fix-disk-f44): find out why build-disk.yml fails on owlOS.
+# Builds the owlOS image locally on the runner for a Fedora 44 and a Fedora 45
+# base, then runs bootc-image-builder against that local image. Nothing is
+# pushed. Remove this workflow once disk images build.
+name: Test disk images
+
+on:
+  push:
+    branches:
+      - fix-disk-f44
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.disk-type }} on base-main:${{ matrix.base }}
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        base: ["44", "latest"]
+        disk-type: ["anaconda-iso", "qcow2"]
+    permissions:
+      contents: read
+    steps:
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+        with:
+          remove-codeql: true
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Build owlOS image (rootful, so bootc-image-builder can see it)
+        run: |
+          sudo podman build --pull=newer --build-arg BASE_TAG=${{ matrix.base }} \
+            --tag localhost/owlos:test --file Containerfile .
+          sudo podman run --rm localhost/owlos:test cat /etc/os-release | grep -E '^(VERSION_ID|PRETTY_NAME)='
+
+      - name: Build ${{ matrix.disk-type }}
+        run: |
+          CONFIG=disk_config/disk.toml
+          [[ "${{ matrix.disk-type }}" == "anaconda-iso" ]] && CONFIG=disk_config/iso.toml
+          mkdir -p output
+          sudo podman run --rm --privileged --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v "${PWD}/output:/output" \
+            -v "${PWD}/${CONFIG}:/config.toml:ro" \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            build --type ${{ matrix.disk-type }} --use-librepo=True --output /output \
+            localhost/owlos:test
+          sudo find output -maxdepth 3 -type f -exec ls -lh {} +
