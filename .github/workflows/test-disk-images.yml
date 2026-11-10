@@ -1,8 +1,10 @@
 ---
 # TEMPORARY (branch fix-disk-f44): find out why build-disk.yml fails on owlOS.
-# Builds the owlOS image locally on the runner for a Fedora 44 and a Fedora 45
-# base, then runs bootc-image-builder against that local image. Nothing is
-# pushed. Remove this workflow once disk images build.
+# Round 1 showed: Fedora 45 can't depsolve the ISO at all (bootc-image-builder
+# isn't ready for F45), and every job fails with osbuild
+# "mount: ... permission denied" on the ubuntu-26.04 runner.
+# Round 2 (this file) tries fixes for the mount error on a Fedora 44 base.
+# Nothing is pushed. Remove this workflow once disk images build.
 name: Test disk images
 
 on:
@@ -13,13 +15,16 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.disk-type }} on base-main:${{ matrix.base }}
-    runs-on: ubuntu-26.04
+    name: ${{ matrix.disk-type }} / ${{ matrix.runner }} / ${{ matrix.fix }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        base: ["44", "latest"]
-        disk-type: ["anaconda-iso", "qcow2"]
+        include:
+          - { disk-type: qcow2, runner: ubuntu-26.04, fix: userns-sysctl }
+          - { disk-type: qcow2, runner: ubuntu-26.04, fix: apparmor-unconfined }
+          - { disk-type: qcow2, runner: ubuntu-24.04, fix: none }
+          - { disk-type: anaconda-iso, runner: ubuntu-26.04, fix: userns-sysctl }
     permissions:
       contents: read
     steps:
@@ -31,19 +36,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Runner info
+        run: |
+          uname -r
+          podman --version
+          sysctl kernel.apparmor_restrict_unprivileged_userns kernel.apparmor_restrict_unprivileged_unconfined 2>/dev/null || true
+
+      - name: Allow user namespaces under AppArmor
+        if: matrix.fix == 'userns-sysctl'
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0 || true
+
       - name: Build owlOS image (rootful, so bootc-image-builder can see it)
         run: |
-          sudo podman build --pull=newer --build-arg BASE_TAG=${{ matrix.base }} \
+          sudo podman build --pull=newer --build-arg BASE_TAG=44 \
             --tag localhost/owlos:test --file Containerfile .
-          sudo podman run --rm localhost/owlos:test cat /etc/os-release | grep -E '^(VERSION_ID|PRETTY_NAME)='
 
       - name: Build ${{ matrix.disk-type }}
         run: |
           CONFIG=disk_config/disk.toml
           [[ "${{ matrix.disk-type }}" == "anaconda-iso" ]] && CONFIG=disk_config/iso.toml
+          EXTRA=()
+          [[ "${{ matrix.fix }}" == "apparmor-unconfined" ]] && EXTRA+=(--security-opt apparmor=unconfined)
           mkdir -p output
           sudo podman run --rm --privileged --pull=newer \
-            --security-opt label=type:unconfined_t \
+            --security-opt label=type:unconfined_t "${EXTRA[@]}" \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v "${PWD}/output:/output" \
             -v "${PWD}/${CONFIG}:/config.toml:ro" \
