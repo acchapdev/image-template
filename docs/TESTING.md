@@ -6,14 +6,14 @@ owlOS images are x86_64 only, because `ghcr.io/ublue-os/base-main` is published 
 
 1. Make sure the latest **Build container image** run on `main` succeeded. That run publishes `ghcr.io/acchapdev/owlos:latest`.
 2. In GitHub, go to **Actions → Build disk images → Run workflow**, choose `platform: amd64`, and leave "Upload to S3" off.
-3. When it finishes, download the `anaconda-iso` artifact from the run page.
+3. When it finishes, download the `owlos-anaconda-iso` artifact from the run page (`owlos-qcow2` is the qcow2).
 
 From the command line:
 
 ```bash
 gh workflow run build-disk.yml -R acchapdev/owlOS -f platform=amd64
 gh run watch -R acchapdev/owlOS "$(gh run list -R acchapdev/owlOS -w build-disk.yml -L 1 --json databaseId --jq '.[0].databaseId')"
-gh run download -R acchapdev/owlOS -D owlos-disk   # downloads the artifact(s)
+gh run download -R acchapdev/owlOS -n owlos-anaconda-iso -D owlos-iso   # the ISO; owlos-qcow2 is the qcow2
 ```
 
 On a Linux host with podman you can build the ISO locally instead: `just build-iso ghcr.io/acchapdev/owlos latest`.
