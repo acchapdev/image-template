@@ -1,11 +1,19 @@
+# Fedora release of the base image (ghcr.io/ublue-os/base-main:<tag>).
+# Pinned to 44 because bootc-image-builder can't build an installer ISO from a
+# Fedora 45 image yet (depsolve finds no packages; tested 2026-11-10). Image and
+# qcow2 work on 45. Switch back to "latest" once the ISO builds on 45; installed
+# systems then move to 45 on a normal `bootc upgrade`.
+# Override for a one-off build with --build-arg BASE_TAG=<tag>.
+ARG BASE_TAG=44
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-# ublue-os base-main: Fedora Atomic with no desktop of its own (latest = Fedora 45 as of 2026-11)
-FROM ghcr.io/ublue-os/base-main:latest
+# ublue-os base-main: Fedora Atomic with no desktop of its own
+FROM ghcr.io/ublue-os/base-main:${BASE_TAG}
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable
