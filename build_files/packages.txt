@@ -13,8 +13,9 @@ mangowm
 niri
 hyprland hyprland-guiutils
 
-# Portals
-xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-hyprland
+# Portals. mango-portals.conf (shipped by mangowm) asks for wlr for screen capture;
+# without xdg-desktop-portal-wlr the portal falls back to the Hyprland backend.
+xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-wlr
 
 # Dux system integration (its first-run "System check" asks for these)
 # - power-profiles-daemon: power mode switching, starts on balanced (enabled in build.sh)
