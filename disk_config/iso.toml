@@ -5,6 +5,10 @@
 contents = """
 %post
 bootc switch --mutate-in-place --transport registry ghcr.io/acchapdev/owlos:latest
+# Anaconda writes its own default target into /etc (multi-user.target for a text
+# install), overriding the image's graphical.target, so greetd never starts.
+# %post runs after that, inside the installed system, so set it back here.
+systemctl set-default graphical.target
 %end
 """
 

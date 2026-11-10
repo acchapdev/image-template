@@ -65,3 +65,8 @@ groups = ["wheel"]
 ```
 
 Then run `just build-qcow2 ghcr.io/acchapdev/owlos latest && just run-vm-qcow2 ghcr.io/acchapdev/owlos latest` on a Linux host. The VM's web console is at http://localhost:8006.
+
+## Known issues
+
+- **`systemd-remount-fs.service` fails at boot** (`overlay: No changes allowed in reconfigure`). Anaconda writes a `/` entry with `ro` into `/etc/fstab`. On owlOS's composefs/overlay root that remount isn't allowed, so the unit fails. This is harmless: the system runs normally. Ignore it in `systemctl --failed`.
+- **The ISO used to boot to a text console instead of the greeter.** Anaconda writes its own default target (`multi-user.target` for a text install) over the image's `graphical.target`. `disk_config/iso.toml` now runs `systemctl set-default graphical.target` in `%post`. If an install ever lands on a `login:` prompt, check `systemctl get-default`.
