@@ -20,7 +20,19 @@ On a Linux host with podman you can build the ISO locally instead: `just build-i
 
 ## 2. Install
 
-Boot the ISO in a VM with UEFI firmware, at least 4 GB RAM, a 30 GB disk and 3D acceleration on if the hypervisor has it. Then:
+Boot the ISO in a VM with UEFI firmware, Secure Boot off, at least 4 GB RAM and a 30 GB disk. Secure Boot is off because ublue kernels are signed with ublue's key, which a stock Secure Boot setup doesn't trust.
+
+**The VM needs 3D acceleration.** niri refuses software rendering ("software EGL renderers are skipped"), so without a 3D-capable virtual GPU a niri session is a blank screen. Hyprland needs a GPU too. Mango runs either way. With libvirt on a host that has a GPU (no display needed), use a virgl device and render it headless, keeping VNC to watch:
+
+```bash
+virt-install ... --video virtio,model.acceleration.accel3d=yes \
+  --graphics egl-headless,gl.rendernode=/dev/dri/renderD128 \
+  --graphics vnc,listen=127.0.0.1,password=<up to 8 chars>
+```
+
+Inside the guest, `journalctl -k | grep "\[drm\] features"` should show `+virgl`. macOS Screen Sharing needs the VNC password: without one it asks for a password anyway and then hangs. Connect with `ssh -L 5900:127.0.0.1:5900 <host>`, then `vnc://localhost:5900`.
+
+Then:
 
 1. In Anaconda, choose the disk, **create a user** (tick "Make this user administrator") and set the timezone. owlOS has no first-boot setup wizard, so this user is the only way to log in.
 2. Finish the install and reboot.
@@ -70,3 +82,4 @@ Then run `just build-qcow2 ghcr.io/acchapdev/owlos latest && just run-vm-qcow2 g
 
 - **`systemd-remount-fs.service` fails at boot** (`overlay: No changes allowed in reconfigure`). Anaconda writes a `/` entry with `ro` into `/etc/fstab`. On owlOS's composefs/overlay root that remount isn't allowed, so the unit fails. This is harmless: the system runs normally. Ignore it in `systemctl --failed`.
 - **The ISO used to boot to a text console instead of the greeter.** Anaconda writes its own default target (`multi-user.target` for a text install) over the image's `graphical.target`. `disk_config/iso.toml` now runs `systemctl set-default graphical.target` in `%post`. If an install ever lands on a `login:` prompt, check `systemctl get-default`.
+- **macOS Screen Sharing: Cmd doesn't work as Super in mango.** Over VNC from macOS Screen Sharing, Cmd+Enter, Cmd+T and Cmd+Q do nothing in a mango session, though Cmd works as Super in niri and Hyprland. The bindings themselves are fine: the same keys sent straight into the VM's keyboard work (`virsh send-key <vm> KEY_LEFTMETA KEY_ENTER` opens ghostty). It's how the VNC client sends Cmd, not owlOS. On real hardware the Super key works. To test mango bindings in a VM, use `virsh send-key` or a VNC client that sends Super. To act inside the session without the keyboard, use mango's IPC from a shell with the session's `MANGO_INSTANCE_SIGNATURE`: `mmsg dispatch spawn,ghostty` or `mmsg get all-clients`.
