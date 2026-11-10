@@ -107,6 +107,9 @@ grep -qx 'com.mitchellh.ghostty.desktop' /usr/share/xdg-terminal-exec/xdg-termin
 grep -q '^type = "btrfs"' /usr/lib/bootc/install/20-owlos.toml
 # Dux system integration: niri needs dbus-update-activation-environment
 test -x /usr/bin/dbus-update-activation-environment
+# mango screen capture: mango-portals.conf points ScreenCast/Screenshot at wlr
+grep -q "=wlr" /usr/share/xdg-desktop-portal/mango-portals.conf
+test -f /usr/share/xdg-desktop-portal/portals/wlr.portal
 
 ### Services
 systemctl enable podman.socket
